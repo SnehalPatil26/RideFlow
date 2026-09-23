@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>RideFlow | Smart Ride Analytics</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at 10% 10%, rgba(0,210,255,.12), transparent 30%),
+        radial-gradient(circle at 90% 20%, rgba(150,60,255,.13), transparent 30%),
+        #060914;
+    color: #fff;
+    min-height: 100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 245px;
+    height: 100vh;
+    padding: 28px 18px;
+    background: rgba(10,15,32,.92);
+    border-right: 1px solid rgba(255,255,255,.08);
+    backdrop-filter: blur(18px);
+    z-index: 100;
+}
+
+.logo {
+    font-size: 27px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    padding-left: 10px;
+}
+
+.logo span {
+    color: #26d9ff;
+}
+
+.subtitle {
+    color: #687593;
+    font-size: 11px;
+    padding-left: 10px;
+    margin-bottom: 35px;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nav button {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: #8792ad;
+    padding: 14px 15px;
+    border-radius: 12px;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    transition: .25s;
+}
+
+.nav button:hover {
+    background: rgba(38,217,255,.08);
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.nav button.active {
+    background: linear-gradient(
+        90deg,
+        rgba(38,217,255,.18),
+        rgba(130,70,255,.10)
+    );
+    color: #fff;
+    border: 1px solid rgba(38,217,255,.2);
+}
+
+/* MAIN */
+
+.main {
+    margin-left: 245px;
+    padding: 30px;
+    min-height: 100vh;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+.page-title {
+    font-size: 30px;
+    font-weight: 750;
+}
+
+.page-description {
+    color: #7783a0;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+.live {
+    padding: 9px 15px;
+    border-radius: 30px;
+    color: #54ffc3;
+    background: rgba(0,255,170,.08);
+    border: 1px solid rgba(0,255,170,.25);
+    font-size: 12px;
+}
+
+/* PAGE */
+
+.page {
+    display: none;
+    animation: fade .3s ease;
+}
+
+.page.active {
+    display: block;
+}
+
+@keyframes fade {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* CARDS */
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.card {
+    background: rgba(15,22,44,.78);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 18px;
+    padding: 22px;
+    transition: .25s;
+    box-shadow: 0 15px 45px rgba(0,0,0,.22);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(38,217,255,.25);
+}
+
+.card-label {
+    color: #74809d;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.card-value {
+    font-size: 28px;
+    font-weight: 750;
+}
+
+/* GRID */
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.panel {
+    background: rgba(15,22,44,.78);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 20px;
+    padding: 22px;
+    min-height: 350px;
+}
+
+.panel h2 {
+    font-size: 17px;
+    margin-bottom: 20px;
+}
+
+.chart {
+    height: 270px;
+}
+
+/* PIPELINE */
+
+.pipeline {
+    display: grid;
+    grid-template-columns: repeat(5,1fr);
+    gap: 12px;
+}
+
+.pipeline-step {
+    padding: 20px 10px;
+    text-align: center;
+    border-radius: 15px;
+    background: rgba(38,217,255,.05);
+    border: 1px solid rgba(38,217,255,.12);
+}
+
+.pipeline-step .number {
+    color: #26d9ff;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.pipeline-step .name {
+    font-size: 13px;
+}
+
+/* TABLE */
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 14px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    text-align: left;
+}
+
+th {
+    color: #26d9ff;
+    font-size: 12px;
+}
+
+td {
+    color: #b6bfd4;
+    font-size: 13px;
+}
+
+/* INFO */
+
+.info-box {
+    background: rgba(15,22,44,.78);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.info-box h2 {
+    margin-bottom: 15px;
+}
+
+.info-box p {
+    color: #8995b0;
+    line-height: 1.8;
+}
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 15px;
+}
+
+.tech {
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(38,217,255,.05);
+    border: 1px solid rgba(38,217,255,.1);
+}
+
+.tech h3 {
+    margin-bottom: 8px;
+}
+
+.tech p {
+    color: #7d89a4;
+    font-size: 13px;
+}
+
+/* MOBILE */
+
+@media(max-width:1000px) {
+
+    .sidebar {
+        width: 200px;
+    }
+
+    .main {
+        margin-left: 200px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+    .pipeline {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:700px) {
+
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+
+    .main {
+        margin-left: 0;
+        padding: 18px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .tech-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar">
+
+    <div class="logo">
+        Ride<span>Flow</span>
+    </div>
+
+    <div class="subtitle">
+        SMART RIDE DATA PLATFORM
+    </div>
+
+    <nav class="nav">
+
+        <button class="active" onclick="showPage('overview', this)">
+            🏠 Overview
+        </button>
+
+        <button onclick="showPage('analytics', this)">
+            🚕 Ride Analytics
+        </button>
+
+        <button onclick="showPage('vehicles', this)">
+            🚗 Vehicle Intelligence
+        </button>
+
+        <button onclick="showPage('locations', this)">
+            📍 Location Intelligence
+        </button>
+
+        <button onclick="showPage('pipeline', this)">
+            ⚙️ Data Pipeline
+        </button>
+
+        <button onclick="showPage('about', this)">
+            ℹ️ About
+        </button>
+
+    </nav>
+
+</aside>
+
+
+<!-- MAIN -->
+
+<main class="main">
+
+    <div class="topbar">
+
+        <div>
+            <div class="page-title" id="pageTitle">
+                Overview
+            </div>
+
+            <div class="page-description" id="pageDescription">
+                Real-time ride booking analytics
+            </div>
+        </div>
+
+        <div class="live">
+            ● LIVE DATA
+        </div>
+
+    </div>
+
+
+    <!-- OVERVIEW -->
+
+    <section id="overview" class="page active">
+
+        <div class="cards">
+
+            <div class="card">
+                <div class="card-label">
+                    TOTAL RIDES
+                </div>
+
+                <div class="card-value" id="totalRides">
+                    Loading...
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-label">
+                    SUCCESS RATE
+                </div>
+
+                <div class="card-value" id="successRate">
+                    Loading...
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-label">
+                    TOTAL REVENUE
+                </div>
+
+                <div class="card-value" id="revenue">
+                    Loading...
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-label">
+                    AVG DISTANCE
+                </div>
+
+                <div class="card-value" id="avgDistance">
+                    Loading...
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="grid">
+
+            <div class="panel">
+
+                <h2>Vehicle Performance</h2>
+
+                <div class="chart">
+                    <canvas id="vehicleChart"></canvas>
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h2>Booking Status</h2>
+
+                <div class="chart">
+                    <canvas id="statusChart"></canvas>
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h2>Payment Methods</h2>
+
+                <div class="chart">
+                    <canvas id="paymentChart"></canvas>
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h2>Monthly Ride Trend</h2>
+
+                <div class="chart">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- RIDE ANALYTICS -->
+
+    <section id="analytics" class="page">
+
+        <div class="cards">
+
+            <div class="card">
+                <div class="card-label">
+                    TOTAL BOOKINGS
+                </div>
+
+                <div class="card-value" id="analyticsTotal">
+                    --
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">
+                    SUCCESSFUL
+                </div>
+
+                <div class="card-value" id="analyticsSuccess">
+                    --
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">
+                    SUCCESS RATE
+                </div>
+
+                <div class="card-value" id="analyticsRate">
+                    --
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">
+                    AVG DISTANCE
+                </div>
+
+                <div class="card-value" id="analyticsDistance">
+                    --
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="grid">
+
+            <div class="panel">
+
+                <h2>Ride Status Distribution</h2>
+
+                <div class="chart">
+                    <canvas id="analyticsStatus"></canvas>
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h2>Monthly Ride Volume</h2>
+
+                <div class="chart">
+                    <canvas id="analyticsMonthly"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- VEHICLES -->
+
+    <section id="vehicles" class="page">
+
+        <div class="info-box">
+
+            <h2>Vehicle Intelligence</h2>
+
+            <p>
+                Vehicle-level ride performance generated from the
+                processed RideFlow SQLite dataset.
+            </p>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Vehicle Type</th>
+                            <th>Rides</th>
+                            <th>Avg Booking Value</th>
+                            <th>Avg Distance</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="vehicleTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LOCATIONS -->
+
+    <section id="locations" class="page">
+
+        <div class="info-box">
+
+            <h2>Location Intelligence</h2>
+
+            <p>
+                RideFlow uses pickup and drop location information
+                from the cleaned ride-booking dataset.
+            </p>
+
+        </div>
+
+        <div class="grid">
+
+            <div class="panel">
+
+                <h2>Top Pickup Locations</h2>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Pickup Location</th>
+                                <th>Rides</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="pickupTable">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h2>Top Drop Locations</h2>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Drop Location</th>
+                                <th>Rides</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="dropTable">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PIPELINE -->
+
+    <section id="pipeline" class="page">
+
+        <div class="info-box">
+
+            <h2>Data Engineering Pipeline</h2>
+
+            <p>
+                RideFlow processes raw ride-booking data through
+                ingestion, cleaning, validation, transformation
+                and database storage.
+            </p>
+
+        </div>
+
+
+        <div class="pipeline">
+
+            <div class="pipeline-step">
+                <div class="number">01</div>
+                <div class="name">Data Ingestion</div>
+            </div>
+
+            <div class="pipeline-step">
+                <div class="number">02</div>
+                <div class="name">Data Cleaning</div>
+            </div>
+
+            <div class="pipeline-step">
+                <div class="number">03</div>
+                <div class="name">Validation</div>
+            </div>
+
+            <div class="pipeline-step">
+                <div class="number">04</div>
+                <div class="name">Transformation</div>
+            </div>
+
+            <div class="pipeline-step">
+                <div class="number">05</div>
+                <div class="name">SQLite Storage</div>
+            </div>
+
+        </div>
+
+
+        <br>
+
+        <div class="cards">
+
+            <div class="card">
+                <div class="card-label">RAW RECORDS</div>
+                <div class="card-value">103,024</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">DATABASE</div>
+                <div class="card-value">SQLite</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">PIPELINE STATUS</div>
+                <div class="card-value">SUCCESS</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">DATA SOURCE</div>
+                <div class="card-value">CSV</div>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ABOUT -->
+
+    <section id="about" class="page">
+
+        <div class="info-box">
+
+            <h2>About RideFlow</h2>
+
+            <p>
+                RideFlow is a Smart Ride Data Engineering and
+                Analytics Platform designed to demonstrate an
+                end-to-end data pipeline using real ride-booking
+                data.
+            </p>
+
+            <br>
+
+            <p>
+                The system performs data ingestion, cleaning,
+                validation, transformation and storage before
+                exposing analytics through a Flask API and
+                interactive dashboard.
+            </p>
+
+        </div>
+
+
+        <div class="tech-grid">
+
+            <div class="tech">
+                <h3>Python</h3>
+                <p>Pipeline development and data processing.</p>
+            </div>
+
+            <div class="tech">
+                <h3>Pandas</h3>
+                <p>Data cleaning and transformation.</p>
+            </div>
+
+            <div class="tech">
+                <h3>SQLite</h3>
+                <p>Processed data storage.</p>
+            </div>
+
+            <div class="tech">
+                <h3>Flask</h3>
+                <p>Analytics API layer.</p>
+            </div>
+
+            <div class="tech">
+                <h3>Chart.js</h3>
+                <p>Interactive analytics visualization.</p>
+            </div>
+
+            <div class="tech">
+                <h3>HTML / CSS / JS</h3>
+                <p>Interactive dashboard interface.</p>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<script>
+
+/* PAGE NAVIGATION */
+
+function showPage(pageId, button) {
+
+    document.querySelectorAll(".page").forEach(page => {
+        page.classList.remove("active");
+    });
+
+    document.getElementById(pageId).classList.add("active");
+
+
+    document.querySelectorAll(".nav button").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    button.classList.add("active");
+
+
+    const titles = {
+
+        overview: [
+            "Overview",
+            "Real-time ride booking analytics"
+        ],
+
+        analytics: [
+            "Ride Analytics",
+            "Ride booking performance and trends"
+        ],
+
+        vehicles: [
+            "Vehicle Intelligence",
+            "Vehicle-level ride performance"
+        ],
+
+        locations: [
+            "Location Intelligence",
+            "Pickup and drop location insights"
+        ],
+
+        pipeline: [
+            "Data Pipeline",
+            "End-to-end RideFlow data engineering process"
+        ],
+
+        about: [
+            "About RideFlow",
+            "Smart Ride Data Engineering & Analytics Platform"
+        ]
+
+    };
+
+
+    document.getElementById("pageTitle").innerText =
+        titles[pageId][0];
+
+    document.getElementById("pageDescription").innerText =
+        titles[pageId][1];
+
+}
+
+
+/* LOAD SUMMARY */
+
+async function loadSummary() {
+
+    try {
+
+        const response =
+            await fetch("/api/summary");
+
+        const data =
+            await response.json();
+
+
+        document.getElementById("totalRides").innerText =
+            Number(data.total_rides).toLocaleString();
+
+        document.getElementById("successRate").innerText =
+            data.success_rate + "%";
+
+        document.getElementById("revenue").innerText =
+            "₹" + Number(data.total_revenue).toLocaleString();
+
+        document.getElementById("avgDistance").innerText =
+            data.average_distance + " km";
+
+
+        document.getElementById("analyticsTotal").innerText =
+            Number(data.total_rides).toLocaleString();
+
+        document.getElementById("analyticsSuccess").innerText =
+            Number(data.successful_rides).toLocaleString();
+
+        document.getElementById("analyticsRate").innerText =
+            data.success_rate + "%";
+
+        document.getElementById("analyticsDistance").innerText =
+            data.average_distance + " km";
+
+
+    } catch(error) {
+
+        console.error("Summary error:", error);
+
+    }
+
+}
+
+
+/* VEHICLES */
+
+async function loadVehicles() {
+
+    try {
+
+        const response =
+            await fetch("/api/vehicles");
+
+        const data =
+            await response.json();
+
+
+        const table =
+            document.getElementById("vehicleTable");
+
+        table.innerHTML = "";
+
+
+        data.forEach(vehicle => {
+
+            table.innerHTML += `
+                <tr>
+                    <td>${vehicle.vehicle_type}</td>
+                    <td>${Number(vehicle.rides).toLocaleString()}</td>
+                    <td>₹${Number(vehicle.avg_booking_value).toLocaleString()}</td>
+                    <td>${vehicle.avg_distance} km</td>
+                </tr>
+            `;
+
+        });
+
+
+        new Chart(
+            document.getElementById("vehicleChart"),
+            {
+                type: "bar",
+
+                data: {
+
+                    labels:
+                        data.map(v => v.vehicle_type),
+
+                    datasets: [{
+                        label: "Rides",
+
+                        data:
+                            data.map(v => v.rides),
+
+                        borderWidth: 1
+                    }]
+
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+
+            }
+        );
+
+
+    } catch(error) {
+
+        console.error("Vehicle error:", error);
+
+    }
+
+}
+
+
+/* STATUS */
+
+async function loadStatus() {
+
+    try {
+
+        const response =
+            await fetch("/api/status");
+
+        const data =
+            await response.json();
+
+
+        new Chart(
+            document.getElementById("statusChart"),
+            {
+                type: "doughnut",
+
+                data: {
+
+                    labels:
+                        data.map(x => x.booking_status),
+
+                    datasets: [{
+
+                        data:
+                            data.map(x => x.count)
+
+                    }]
+
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+
+            }
+        );
+
+
+        new Chart(
+            document.getElementById("analyticsStatus"),
+            {
+                type: "doughnut",
+
+                data: {
+
+                    labels:
+                        data.map(x => x.booking_status),
+
+                    datasets: [{
+
+                        data:
+                            data.map(x => x.count)
+
+                    }]
+
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+
+            }
+        );
+
+
+    } catch(error) {
+
+        console.error("Status error:", error);
+
+    }
+
+}
+
+
+/* PAYMENTS */
+
+async function loadPayments() {
+
+    try {
+
+        const response =
+            await fetch("/api/payments");
+
+        const data =
+            await response.json();
+
+
+        new Chart(
+            document.getElementById("paymentChart"),
+            {
+                type: "pie",
+
+                data: {
+
+                    labels:
+                        data.map(x => x.payment_method),
+
+                    datasets: [{
+
+                        data:
+                            data.map(x => x.rides)
+
+                    }]
+
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+
+            }
+        );
+
+
+    } catch(error) {
+
+        console.error("Payment error:", error);
+
+    }
+
+}
+
+
+/* MONTHLY */
+
+async function loadMonthly() {
+
+    try {
+
+        const response =
+            await fetch("/api/monthly");
+
+        const data =
+            await response.json();
+
+
+        new Chart(
+            document.getElementById("monthlyChart"),
+            {
+                type: "line",
+
+                data: {
+
+                    labels:
+                        data.map(x =>
+                            `${x.month_name} ${x.year}`
+                        ),
+
+                    datasets: [{
+
+                        label: "Rides",
+
+                        data:
+                            data.map(x => x.rides),
+
+                        tension: .35,
+
+                        fill: false
+
+                    }]
+
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+
+            }
+        );
+
+
+        new Chart(
+            document.getElementById("analyticsMonthly"),
+            {
+                type: "line",
+
+                data: {
+
+                    labels:
+                        data.map(x =>
+                            `${x.month_name} ${x.year}`
+                        ),
+
+                    datasets: [{
+
+                        label: "Rides",
+
+                        data:
+                            data.map(x => x.rides),
+
+                        tension: .35,
+
+                        fill: false
+
+                    }]
+
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+
+            }
+        );
+
+
+    } catch(error) {
+
+        console.error("Monthly error:", error);
+
+    }
+
+}
+
+
+/* LOCATION DATA */
+
+async function loadLocations() {
+
+    try {
+
+        const response =
+            await fetch("/api/locations");
+
+        const data =
+            await response.json();
+
+
+        const pickup =
+            document.getElementById("pickupTable");
+
+        const drop =
+            document.getElementById("dropTable");
+
+
+        pickup.innerHTML = "";
+
+        drop.innerHTML = "";
+
+
+        data.pickup.forEach(x => {
+
+            pickup.innerHTML += `
+                <tr>
+                    <td>${x.location}</td>
+                    <td>${Number(x.rides).toLocaleString()}</td>
+                </tr>
+            `;
+
+        });
+
+
+        data.drop.forEach(x => {
+
+            drop.innerHTML += `
+                <tr>
+                    <td>${x.location}</td>
+                    <td>${Number(x.rides).toLocaleString()}</td>
+                </tr>
+            `;
+
+        });
+
+
+    } catch(error) {
+
+        console.error("Location API not available yet:", error);
+
+    }
+
+}
+
+
+/* START */
+
+loadSummary();
+loadVehicles();
+loadStatus();
+loadPayments();
+loadMonthly();
+loadLocations();
+
+</script>
+
+</body>
+</html>
